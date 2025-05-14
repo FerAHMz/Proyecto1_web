@@ -1,0 +1,30 @@
+.calculator-button {
+  background-color: #333333;
+  color: #ffffff;
+  border: none;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  height: 60px;
+  width: 60px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.calculator-button:hover {
+  background-color: #404040;
+}
+
+.calculator-button.operation {
+  background-color: #ff9500;
+}
+
+.calculator-button.operation:hover {
+  background-color: #ffaa33;
+}
+
+.calculator-button:active {
+  transform: scale(0.95);
+}
