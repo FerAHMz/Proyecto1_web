@@ -4,16 +4,24 @@ import Button from '../Button/Button'
 import './Calculator.css'
 
 const Calculator = () => {
-  const { display, handleNumber, handleOperation, handleBackspace } = useCalculator()
+  const {
+    display,
+    handleNumber,
+    handleOperation,
+    handleBackspace,
+    handleClear,
+    handleToggleSign,
+    handleDecimal
+  } = useCalculator()
 
   return (
-    <div className="calculator">
+    <div className="calculator" role="application" aria-label="Calculator">
       <Display value={display} />
       <div className="calculator-buttons">
-        <Button value="AC" onClick={handleOperation} type="operation" />
-        <Button value="+/-" onClick={handleOperation} type="operation" />
-        <Button value="%" onClick={handleOperation} type="operation" />
-        <Button value="⌫" onClick={handleBackspace} type="operation" />
+        <Button value="AC" onClick={handleClear} type="function" />
+        <Button value="+/-" onClick={handleToggleSign} type="function" />
+        <Button value="%" onClick={() => handleOperation('%')} type="function" />
+        <Button value="⌫" onClick={handleBackspace} type="function" />
         
         <Button value="7" onClick={handleNumber} />
         <Button value="8" onClick={handleNumber} />
@@ -28,12 +36,12 @@ const Calculator = () => {
         <Button value="1" onClick={handleNumber} />
         <Button value="2" onClick={handleNumber} />
         <Button value="3" onClick={handleNumber} />
-        <Button value="-" onClick={handleOperation} type="operation" />
+        <Button value="-" onClick={() => handleOperation('-')} type="operation" />
         
-        <Button value="0" onClick={handleNumber} className="button-zero" />
-        <Button value="." onClick={handleNumber} />
-        <Button value="=" onClick={handleOperation} type="operation" />
-        <Button value="+" onClick={handleOperation} type="operation" />
+        <Button value="0" onClick={handleNumber} className="span-2" />
+        <Button value="." onClick={handleDecimal} />
+        <Button value="=" onClick={() => handleOperation('=')} type="operation" />
+        <Button value="+" onClick={() => handleOperation('+')} type="operation" />
       </div>
     </div>
   )

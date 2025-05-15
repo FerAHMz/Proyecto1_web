@@ -1,156 +1,171 @@
-import { useState, useEffect } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 
 const useCalculator = () => {
   const [display, setDisplay] = useState('0')
+  const [storedValue, setStoredValue] = useState(null)
   const [operation, setOperation] = useState(null)
-  const [previousValue, setPreviousValue] = useState(null)
-  const [newNumber, setNewNumber] = useState(true)
+  const [waitingForOperand, setWaitingForOperand] = useState(false)
 
-  const validateResult = (result) => {
-    const resultStr = result.toString()
-    if (resultStr.startsWith('-')) {
-      if (resultStr.length > 9) return 'ERROR'
-      return resultStr.slice(0, 9)
-    }
-    if (result < 0) return 'ERROR'
-    if (result > 999999999) return 'ERROR'
-    return resultStr.slice(0, 9)
-  }
-
-  const handleNumber = (num) => {
+  const handleNumber = useCallback((number) => {
     if (display === 'ERROR') {
-      setDisplay(num)
+      setDisplay(number)
+      setWaitingForOperand(false)
+      return
+    }
+
+    if (waitingForOperand) {
+      setDisplay(number)
+      setWaitingForOperand(false)
+    } else {
+      const newDisplay = display === '0' ? number : display + number
+      if (newDisplay.replace('-', '').length <= 9) {
+        setDisplay(newDisplay)
+      }
+    }
+  }, [display, waitingForOperand])
+
+  const handleDecimal = useCallback(() => {
+    if (waitingForOperand) {
+      setDisplay('0.')
+      setWaitingForOperand(false)
+      return
+    }
+
+    if (!display.includes('.')) {
+      const newDisplay = display + '.'
+      if (newDisplay.replace('-', '').length <= 9) {
+        setDisplay(newDisplay)
+      }
+    }
+  }, [display, waitingForOperand])
+
+  const handleClear = useCallback(() => {
+    setDisplay('0')
+    setStoredValue(null)
+    setOperation(null)
+    setWaitingForOperand(false)
+  }, [])
+
+  const handleToggleSign = useCallback(() => {
+    if (display === '0' || display === 'ERROR') return
+    
+    if (display.startsWith('-')) {
+      const newValue = display.substring(1)
+      setDisplay(newValue)
+    } else {
+      if (display.length < 9) {
+        setDisplay('-' + display)
+      }
+    }
+  }, [display])
+
+  const handleBackspace = useCallback(() => {
+    if (display === 'ERROR') {
+      setDisplay('0')
       return
     }
     
-    if (num === '.' && display.includes('.')) return
-    if (display.length >= 9) return
-    
-    if (newNumber) {
-      setDisplay(num === '.' ? '0.' : num)
-      setNewNumber(false)
-    } else {
-      setDisplay(display + num)
-    }
-  }
-
-  const toggleSign = () => {
-    if (display === '0' || display === 'ERROR') return
-    if (display.startsWith('-')) {
-      setDisplay(display.slice(1))
-    } else {
-      if (display.length >= 8) return
-      setDisplay('-' + display)
-    }
-  }
-
-  const handleOperation = (op) => {
-    if (op === 'C') {
+    if (display.length === 1 || (display.length === 2 && display.startsWith('-'))) {
       setDisplay('0')
-      setOperation(null)
-      setPreviousValue(null)
-      setNewNumber(true)
+    } else {
+      setDisplay(display.slice(0, -1))
+    }
+  }, [display])
+
+  const calculateResult = useCallback((a, b, op) => {
+    let result
+    switch (op) {
+      case '+': result = a + b; break
+      case '-': result = a - b; break
+      case '*': result = a * b; break
+      case '/': 
+        if (b === 0) return null
+        result = a / b
+        const resultStr = result.toString()
+        const [intPart, decPart] = resultStr.split('.')
+        if (decPart) {
+          const maxDecLength = 8 - intPart.length
+          result = parseFloat(intPart + '.' + decPart.slice(0, maxDecLength))
+        }
+        return result
+      case '%': return b === 0 ? null : a % b
+      default: return b
+    }
+    return result
+  }, [])
+
+  const handleOperation = useCallback((op) => {
+    if (display === 'ERROR' && op !== 'AC') return
+
+    const inputValue = parseFloat(display)
+
+    if (op === 'AC') {
+      handleClear()
       return
     }
 
     if (op === '+/-') {
-      toggleSign()
+      handleToggleSign()
       return
     }
 
-    if (op === '=') {
-      if (!operation || !previousValue) return
+    if (storedValue === null) {
+      setStoredValue(inputValue)
+    } else if (operation) {
+      const result = calculateResult(storedValue, inputValue, operation)
       
-      const prev = parseFloat(previousValue)
-      const current = parseFloat(display)
-      let result = 0
-
-      switch (operation) {
-        case '+':
-          result = prev + current
-          break
-        case '-':
-          result = prev - current
-          break
-        case '*':
-          result = prev * current
-          break
-        case '/':
-          if (current === 0) {
+      if (result === null || result < 0 || result > 999999999) {
+        setDisplay('ERROR')
+      } else {
+        const resultStr = result.toString()
+        if (resultStr.length > 9) {
+          if (resultStr.includes('.')) {
+            const [intPart, decPart] = resultStr.split('.')
+            const maxDecLength = 8 - intPart.length
+            setDisplay(intPart + '.' + decPart.slice(0, maxDecLength))
+          } else {
             setDisplay('ERROR')
-            setNewNumber(true)
-            return
           }
-          result = prev / current
-          break
-        case '%':
-          if (current === 0) {
-            setDisplay('ERROR')
-            setNewNumber(true)
-            return
-          }
-          result = prev % current
-          break
-        default:
-          return
+        } else {
+          setDisplay(resultStr)
+        }
+        setStoredValue(result)
       }
-
-      setDisplay(validateResult(result))
-      setOperation(null)
-      setPreviousValue(null)
-      setNewNumber(true)
-      return
     }
 
-    setOperation(op)
-    setPreviousValue(display)
-    setNewNumber(true)
-  }
-
-  const handleBackspace = () => {
-    if (display === 'ERROR' || display === '0' || newNumber) return
-    if (display.length === 1) {
-      setDisplay('0')
-      setNewNumber(true)
-    } else {
-      setDisplay(display.slice(0, -1))
-    }
-  }
+    setWaitingForOperand(true)
+    setOperation(op === '=' ? null : op)
+  }, [display, operation, storedValue, handleClear, handleToggleSign, calculateResult])
 
   useEffect(() => {
-    const handleKeyPress = (event) => {
-      const { key } = event
-      
-      if (/[0-9]/.test(key)) {
-        handleNumber(key)
-      }
-      
-      if (['+', '-', '*', '/'].includes(key)) {
-        handleOperation(key)
-      }
-      
-      if (key === 'Enter') {
+    const handleKeyDown = (e) => {
+      if (/[0-9]/.test(e.key)) {
+        handleNumber(e.key)
+      } else if (e.key === '.') {
+        handleDecimal()
+      } else if (['+', '-', '*', '/', '%'].includes(e.key)) {
+        handleOperation(e.key)
+      } else if (e.key === 'Enter') {
         handleOperation('=')
-      }
-      
-      if (key === 'Escape' || key === 'Delete') {
-        handleOperation('C')
-      }
-
-      if (key === 'Backspace') {
+      } else if (e.key === 'Backspace') {
         handleBackspace()
+      } else if (e.key === 'Escape') {
+        handleClear()
       }
     }
 
-    window.addEventListener('keydown', handleKeyPress)
-    return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [display, operation, previousValue])
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleNumber, handleDecimal, handleOperation, handleBackspace, handleClear])
 
   return {
     display,
     handleNumber,
     handleOperation,
-    handleBackspace
+    handleBackspace,
+    handleClear,
+    handleToggleSign,
+    handleDecimal
   }
 }
 

@@ -1,10 +1,15 @@
 import './Button.css'
 
-const Button = ({ value, onClick, type = 'number' }) => {
+const Button = ({ value, onClick, type = 'number', className = '' }) => {
+  const handleClick = () => {
+    onClick(value)
+  }
+
   return (
     <button
-      onClick={() => onClick(value)}
-      className={`calculator-button ${type}`}
+      onClick={handleClick}
+      className={`calculator-button ${type} ${className}`}
+      aria-label={value}
     >
       {value}
     </button>

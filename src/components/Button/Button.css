@@ -4,13 +4,14 @@
   border: none;
   border-radius: 50%;
   font-size: 1.5rem;
-  height: 60px;
-  width: 60px;
+  height: 65px;
+  width: 65px;
   cursor: pointer;
   transition: background-color 0.2s;
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 0;
 }
 
 .calculator-button:hover {

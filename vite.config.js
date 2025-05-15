@@ -5,7 +5,12 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'jsdom',
-    globals: true
+    globals: true,
+    setupFiles: ['./src/setupTests.js'],
+    coverage: {
+      reporter: ['text', 'json', 'html']
+    },
+    include: ['src/**/*.{test,spec}.{js,jsx}']
   }
 })
 // https://vite.dev/config/
